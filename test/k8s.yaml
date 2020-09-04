@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server
+  labels: &labels
+    app.kubernetes.io/name: server
+spec:
+  revisionHistoryLimit: 0
+  replicas: 1
+  selector:
+    matchLabels:
+      *labels
+  template:
+    metadata:
+      labels:
+        *labels
+    spec:
+      containers:
+        - name: server
+          image: localhost/nanasi880/golang-runtime-test
+          imagePullPolicy: Never
+          ports:
+            - name: default
+              protocol: TCP
+              containerPort: 8080
+          readinessProbe: &probe
+            httpGet:
+              path: /health
+              port: default
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            *probe
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: server
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: server
+  ports:
+    - name: default
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 30080
